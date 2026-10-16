@@ -54,4 +54,4 @@ That is the only change. Intended behaviour, matches the state table.
 
 ## Files
 
-- stove_vent.ino — the archived firmware
+- placaexaustor.ino — the archived firmware
