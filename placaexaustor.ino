@@ -6,80 +6,90 @@ const int RELAY_PIN4 = 6;
 const int ONOFF = 7;
 const int MORE = 8;
 const int LESS = 9;
-const int LIGHTONOFF =10;
-const int onoffstate = 0;
-const int strength = 1;
-const int lightstate = 0;
+const int LIGHTONOFF = 10;
+
+int onoffstate = 0;
+int lightstate = 0;
+int morestate  = 0;
+int lessstate  = 0;
+int power      = 0;
 
 void setup() {
   pinMode(RELAY_PIN1, OUTPUT);
   pinMode(RELAY_PIN2, OUTPUT);
   pinMode(RELAY_PIN3, OUTPUT);
   pinMode(RELAY_PIN4, OUTPUT);
-  pinMode(ONOFF, INPUT);
-  pinMode(MORE, INPUT);
-  pinMode(LESS, INPUT);
-  pinMode(LIGHTONOFF, INPUT);
+  pinMode(ONOFF, INPUT_PULLUP);
+  pinMode(MORE, INPUT_PULLUP);
+  pinMode(LESS, INPUT_PULLUP);
+  pinMode(LIGHTONOFF, INPUT_PULLUP);
   Serial.begin(9600);
+  digitalWrite(RELAY_PIN1, HIGH);
+  digitalWrite(RELAY_PIN2, HIGH);
+  digitalWrite(RELAY_PIN3, HIGH);
+  digitalWrite(RELAY_PIN4, HIGH);
 }
 
-void onofftoggle() {
-	if (digitalRead(ONOFF) == HIGH) {
-		if (onoffstate) == 0 {
-		onoffstate = 1;
-		digitalWrite(RELAY_PIN1, HIGH);
-		}
-	}
-    else {
-      onoffstate = 0;
-      digitalWrite(RELAY_PIN1, LOW);
-    }
+void turnoff() {
+  digitalWrite(RELAY_PIN1, HIGH);   //we make sure all the relays that control the other speeds are down
+  digitalWrite(RELAY_PIN2, HIGH);
+  digitalWrite(RELAY_PIN3, HIGH);
+//  delay(300);
 }
 
-void powerup() {
-	if (digitalRead(MORE) == HIGH) {
-		if (strength) < 3 {
-			strength = strength+1;
-			if(strength) == 2){
-				digitalWrite(RELAY_PIN2, HIGH);
-			}
-			else if(strength) == 3 {
-				digitalWrite(RELAY_PIN3, HIGH);
-			}
-		}
-	}	
+void powerdecider() {
+  if (power == 1) {
+    digitalWrite(RELAY_PIN2, HIGH);
+    digitalWrite(RELAY_PIN3, HIGH);
+    delay(300); //we have just switched on all the relays but we wait a while before starting to give current to another coil of the motor to make sure the other coils have no current. We wait 300ms instead of the 5µs Arduino would need to perform the function.
+    digitalWrite(RELAY_PIN1, LOW); //we finally switch on or off the relay that controls the slow speed 1
+  }
+  if (power == 2) {
+    digitalWrite(RELAY_PIN1, HIGH);   //we make sure all the relays that control the other speeds are down
+    digitalWrite(RELAY_PIN3, HIGH);
+    delay(300);
+    digitalWrite(RELAY_PIN2, LOW); //we switch on or off the relay that controls the medium speed 2
+  }
+  if (power == 3) {
+    digitalWrite(RELAY_PIN1, HIGH);   //we make sure all the relays that control the other speeds are down
+    digitalWrite(RELAY_PIN2, HIGH);
+    delay(300);
+    digitalWrite(RELAY_PIN3, LOW); //we switch on or off the relay that controls the high speed 3
+  }
+  if (power == 0) {
+    turnoff();
+  }
 }
 
-void powerdown() {
-	if (digitalRead(MORE) == HIGH) {
-		if (strength) > 1 {
-			strength = strength-1;
-			if(strength) == 1){
-				digitalWrite(RELAY_PIN2, LOW);
-			}
-			else if(strength) == 2 {
-				digitalWrite(RELAY_PIN3, LOW);
-			}
-		}
-	}	
+void powerswitches() {
+  if (digitalRead(ONOFF) == HIGH) {
+    onoffstate = 0;
+  }
+  if (digitalRead(ONOFF) == LOW) {
+    onoffstate = 1;
+  }
+  if (digitalRead(MORE) == HIGH) {
+    morestate = 0;
+  }
+  if (digitalRead(MORE) == LOW) {
+    morestate = 1;
+  }
+  if (digitalRead(LESS) == HIGH) {
+    lessstate = 0;
+  }
+  if (digitalRead(LESS) == LOW) {
+    lessstate = 1;
+  }
+  power = onoffstate + morestate + lessstate;
+  Serial.print(power);
 }
 
-void togglelight() {
-	if (digitalRead(LIGHTONOFF) == HIGH) {
-		if (lightstate) == 0 {
-		lightstate = 1;
-		digitalWrite(RELAY_PIN4, HIGH);
-		}
-	}
-    else {
-      lightstate = 0;
-      digitalWrite(RELAY_PIN4, LOW);
-    }
+void lightswitch() {
+  digitalWrite(RELAY_PIN4, digitalRead(LIGHTONOFF));
 }
 
 void loop() {
-	onofftoggle();
-	powerup()
-	powerdown()
-	togglelight()
+  powerdecider();
+  powerswitches();
+  lightswitch();
 }
